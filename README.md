@@ -12,13 +12,29 @@ do not rely on FSRS or SSP-MMC-FSRS, they're mostly untested.
 
 ## User Guide
 0. Setup a virtual environment venv, uv, whatever.
-1. Install, tested this on 3.11
-2. Basic dependencies are: `pip install -r requirements.txt`
-3. Optional: if you want the local `SSP-MMC-FSRS` package-backed scheduler mode instead of the built-in FSRS mode, also install:
+
+```bash
+python3 -m venv anjanikanji_env
+# Creates the isolated virtual environment folder
+
+source anjanikanji_env/bin/activate
+# Activates the environment so your terminal uses this isolated Python instance
+
+export PIP_REQUIRE_VIRTUALENV=true
+# Hard safety guard: blocks pip from ever installing packages system-wide
+
+pip install -r requirements.txt
+# Safely installs the app's packages only inside this local environment
+```
+
+1. 
+2. Install, tested this on 3.11
+3. Basic dependencies are: `pip install -r requirements.txt`
+4. Optional: if you want the local `SSP-MMC-FSRS` package-backed scheduler mode instead of the built-in FSRS mode, also install:
    - `pip install numpy`
    - `pip install torch --index-url https://download.pytorch.org/whl/cpu`
    - `pip install tqdm matplotlib`
-4. Launch the application: `python flet_main.py`
+5. Launch the application: `python flet_main.py`
 
 ---
 
