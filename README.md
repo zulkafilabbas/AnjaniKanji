@@ -5,6 +5,8 @@ The Dashboard is a convienent way of viewing and selecting them for practice.
 Once you start practice, you are taken to the Flash Card view, where, 
 you can play to view stroke order animation or flip to view text labels.
 
+![Dashboard](dashboard.png)
+
 Mostly vibe-coded AI Slop, but still convienient,
 do not rely on FSRS or SSP-MMC-FSRS, they're mostly untested.
 
