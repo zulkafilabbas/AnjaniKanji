@@ -114,6 +114,8 @@ class AnjaniKanjiDesktop:
         self.dashboard_footer_host: ft.Container | None = None
         self.filmstrip_list: ft.Row | None = None
         self.filmstrip_scroll_offset = 0.0
+        self.dashboard_grid: ft.GridView | None = None
+        self.dashboard_grid_scroll_offset = 0.0
         self.sidebar_host: ft.Container | None = None
         self.main_host: ft.Container | None = None
         self.shell_host: ft.Container | None = None
@@ -453,9 +455,21 @@ class AnjaniKanjiDesktop:
         self.preview_character = character
         if self.view == "dashboard":
             self.render()
+            self.restore_dashboard_grid_position()
             return
         self.load_active_stroke()
         self.refresh_dashboard_regions("actions", "filmstrip", "card", "footer")
+
+    def handle_dashboard_grid_scroll(self, event: ft.OnScrollEvent) -> None:
+        self.dashboard_grid_scroll_offset = float(event.pixels or 0.0)
+
+    def restore_dashboard_grid_position(self) -> None:
+        if not self.dashboard_grid:
+            return
+        try:
+            self.dashboard_grid.scroll_to(offset=self.dashboard_grid_scroll_offset, duration=0)
+        except AssertionError:
+            pass
 
     def set_preview_character(self, character: str) -> None:
         if self.session or not character or character == self.preview_character:
@@ -1089,17 +1103,29 @@ class AnjaniKanjiDesktop:
                     ),
                     ft.Container(
                         height=420,
-                        content=ft.GridView(
-                            max_extent=72,
-                            spacing=8,
-                            run_spacing=8,
-                            child_aspect_ratio=1.0,
-                            controls=tiles,
-                        ),
+                        content=self._build_dashboard_grid_view(tiles),
                     ),
                 ],
             ),
         )
+
+    def _build_dashboard_grid_view(self, tiles: list[ft.Control]) -> ft.GridView:
+        if self.dashboard_grid is None:
+            self.dashboard_grid = ft.GridView(
+                max_extent=72,
+                spacing=8,
+                run_spacing=8,
+                child_aspect_ratio=1.0,
+                controls=tiles,
+                on_scroll=self.handle_dashboard_grid_scroll,
+            )
+        else:
+            self.dashboard_grid.max_extent = 72
+            self.dashboard_grid.spacing = 8
+            self.dashboard_grid.run_spacing = 8
+            self.dashboard_grid.child_aspect_ratio = 1.0
+            self.dashboard_grid.controls = tiles
+        return self.dashboard_grid
 
     def build_dashboard_library_panel(self) -> ft.Control:
         settings = SidebarPanel(
@@ -1417,6 +1443,8 @@ class AnjaniKanjiDesktop:
             self.root.update()
         except AssertionError:
             self.page.update()
+        if self.view == "dashboard":
+            self.restore_dashboard_grid_position()
 
 
 def main(page: ft.Page) -> None:
