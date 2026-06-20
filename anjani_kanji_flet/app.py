@@ -414,6 +414,24 @@ class AnjaniKanjiDesktop:
         self.controller.set_meaning_text_size(self.data.profile, value)
         self.refresh_profile_view(self.data.profile.id)
 
+    def set_flipped_kanji_text_size(self, value: str) -> None:
+        if not self.data:
+            return
+        self.controller.set_flipped_kanji_text_size(self.data.profile, value)
+        self.refresh_profile_view(self.data.profile.id)
+
+    def set_kanji_font_family(self, value: str) -> None:
+        if not self.data:
+            return
+        self.controller.set_kanji_font_family(self.data.profile, value)
+        self.refresh_profile_view(self.data.profile.id)
+
+    def set_meaning_font_family(self, value: str) -> None:
+        if not self.data:
+            return
+        self.controller.set_meaning_font_family(self.data.profile, value)
+        self.refresh_profile_view(self.data.profile.id)
+
     def add_profile(self) -> None:
         profile = self.controller.create_profile(self.new_profile_name)
         if not profile:
@@ -905,7 +923,7 @@ class AnjaniKanjiDesktop:
         return self.dashboard_root or ft.Container()
 
     def build_learning_top(self) -> ft.Control:
-        progress_text = f"{self.pos + 1} / {len(self.session.kanji)}" if self.session else "browse deck"
+        progress_text = f"{self.pos + 1} / {len(self.session.kanji)}" if self.session else ""
         deck_name = self.data.deck.name if self.data and self.data.deck else "no deck selected"
         return ft.Container(
             bgcolor=SURFACE,
@@ -929,7 +947,7 @@ class AnjaniKanjiDesktop:
                         horizontal_alignment=ft.CrossAxisAlignment.END,
                         controls=[
                             ft.Text(deck_name, color=TEXT_SOFT, size=12, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                            ft.Text(progress_text, color=ACCENT, size=14, weight=ft.FontWeight.BOLD),
+                            ft.Text(progress_text, color=ACCENT, size=14, weight=ft.FontWeight.BOLD, visible=bool(progress_text)),
                         ],
                     ),
                 ],
@@ -1220,11 +1238,41 @@ class AnjaniKanjiDesktop:
                                     border_color=DIVIDER,
                                     text_size=12,
                                 ),
+                                ft.Text("Japanese flipped size", color=TEXT, size=13),
+                                ft.TextField(
+                                    value=f"{profile.flipped_kanji_text_size:.0f}" if profile else "20",
+                                    on_submit=lambda e: self.set_flipped_kanji_text_size(e.control.value),
+                                    on_blur=lambda e: self.set_flipped_kanji_text_size(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
                                 ft.Text("Meaning text size", color=TEXT, size=13),
                                 ft.TextField(
                                     value=f"{profile.meaning_text_size:.0f}" if profile else "26",
                                     on_submit=lambda e: self.set_meaning_text_size(e.control.value),
                                     on_blur=lambda e: self.set_meaning_text_size(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
+                                ft.Text("Japanese font family", color=TEXT, size=13),
+                                ft.TextField(
+                                    value=profile.kanji_font_family if profile else "Noto Sans CJK JP",
+                                    on_submit=lambda e: self.set_kanji_font_family(e.control.value),
+                                    on_blur=lambda e: self.set_kanji_font_family(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
+                                ft.Text("Meaning font family", color=TEXT, size=13),
+                                ft.TextField(
+                                    value=profile.meaning_font_family if profile else "Arial",
+                                    on_submit=lambda e: self.set_meaning_font_family(e.control.value),
+                                    on_blur=lambda e: self.set_meaning_font_family(e.control.value),
                                     color=TEXT,
                                     bgcolor=PANEL_ALT,
                                     border_color=DIVIDER,
@@ -1381,7 +1429,10 @@ class AnjaniKanjiDesktop:
             card_size=self.card_size(),
             canvas_size=self.canvas_size(),
             kanji_text_size=self.data.profile.kanji_text_size if self.data else 72.0,
+            flipped_kanji_text_size=self.data.profile.flipped_kanji_text_size if self.data else 20.0,
             meaning_text_size=self.data.profile.meaning_text_size if self.data else 26.0,
+            kanji_font_family=self.data.profile.kanji_font_family if self.data else "Noto Sans CJK JP",
+            meaning_font_family=self.data.profile.meaning_font_family if self.data else "Arial",
             deck_total=self.data.total_cards if self.data else 0,
         )
         return KanjiCard(
@@ -1419,7 +1470,10 @@ class AnjaniKanjiDesktop:
             card_size=self.card_size(),
             canvas_size=self.canvas_size(),
             kanji_text_size=self.data.profile.kanji_text_size if self.data else 72.0,
+            flipped_kanji_text_size=self.data.profile.flipped_kanji_text_size if self.data else 20.0,
             meaning_text_size=self.data.profile.meaning_text_size if self.data else 26.0,
+            kanji_font_family=self.data.profile.kanji_font_family if self.data else "Noto Sans CJK JP",
+            meaning_font_family=self.data.profile.meaning_font_family if self.data else "Arial",
             deck_total=self.data.total_cards if self.data else 0,
         )
         if not model.active:

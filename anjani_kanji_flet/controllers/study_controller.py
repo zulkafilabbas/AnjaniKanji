@@ -136,7 +136,10 @@ class StudyController:
         card_size: float,
         canvas_size: float,
         kanji_text_size: float,
+        flipped_kanji_text_size: float,
         meaning_text_size: float,
+        kanji_font_family: str,
+        meaning_font_family: str,
         deck_total: int,
     ) -> StudyCardViewModel:
         """Build the typed study-card state used by the flashcard component."""
@@ -156,7 +159,10 @@ class StudyController:
             card_size=card_size,
             canvas_size=canvas_size,
             kanji_text_size=kanji_text_size,
+            flipped_kanji_text_size=flipped_kanji_text_size,
             meaning_text_size=meaning_text_size,
+            kanji_font_family=kanji_font_family,
+            meaning_font_family=meaning_font_family,
         )
 
     def build_dashboard_summary_model(
@@ -258,6 +264,29 @@ class StudyController:
         profile.meaning_text_size = size
         self.storage.update_profile(profile)
         return size
+
+    def set_flipped_kanji_text_size(self, profile: Profile, value: str) -> float:
+        """Persist the flipped kanji font size and return the clamped value."""
+        try:
+            size = float(value)
+        except ValueError:
+            size = profile.flipped_kanji_text_size
+        size = max(12.0, min(48.0, size))
+        profile.flipped_kanji_text_size = size
+        self.storage.update_profile(profile)
+        return size
+
+    def set_kanji_font_family(self, profile: Profile, value: str) -> str:
+        """Persist the Japanese font family."""
+        profile.kanji_font_family = value.strip() or profile.kanji_font_family
+        self.storage.update_profile(profile)
+        return profile.kanji_font_family
+
+    def set_meaning_font_family(self, profile: Profile, value: str) -> str:
+        """Persist the meaning font family."""
+        profile.meaning_font_family = value.strip() or profile.meaning_font_family
+        self.storage.update_profile(profile)
+        return profile.meaning_font_family
 
     def scheduler_status(self) -> SchedulerRuntimeStatus:
         """Return runtime package availability for the untouched local scheduler package."""

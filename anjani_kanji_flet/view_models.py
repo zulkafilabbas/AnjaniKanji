@@ -34,7 +34,10 @@ class StudyCardViewModel:
     card_size: float
     canvas_size: float
     kanji_text_size: float
+    flipped_kanji_text_size: float
     meaning_text_size: float
+    kanji_font_family: str
+    meaning_font_family: str
 
 
 @dataclass(frozen=True, slots=True)

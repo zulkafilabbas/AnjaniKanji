@@ -75,7 +75,10 @@ class Profile:
     scheduler_mode: str
     desired_retention: float
     kanji_text_size: float
+    flipped_kanji_text_size: float
     meaning_text_size: float
+    kanji_font_family: str
+    meaning_font_family: str
 
 
 @dataclass
@@ -226,7 +229,11 @@ class AppStorage:
                 scheduler_mode TEXT NOT NULL DEFAULT 'fsrs',
                 desired_retention REAL NOT NULL DEFAULT 0.9,
                 kanji_text_size REAL NOT NULL DEFAULT 72.0,
+                flipped_kanji_text_size REAL NOT NULL DEFAULT 20.0,
                 meaning_text_size REAL NOT NULL DEFAULT 26.0
+                ,
+                kanji_font_family TEXT NOT NULL DEFAULT 'Noto Sans CJK JP',
+                meaning_font_family TEXT NOT NULL DEFAULT 'Arial'
             );
 
             CREATE TABLE IF NOT EXISTS decks (
@@ -319,8 +326,14 @@ class AppStorage:
             cur.execute("ALTER TABLE profiles ADD COLUMN desired_retention REAL NOT NULL DEFAULT 0.9")
         if "kanji_text_size" not in profile_columns:
             cur.execute("ALTER TABLE profiles ADD COLUMN kanji_text_size REAL NOT NULL DEFAULT 72.0")
+        if "flipped_kanji_text_size" not in profile_columns:
+            cur.execute("ALTER TABLE profiles ADD COLUMN flipped_kanji_text_size REAL NOT NULL DEFAULT 20.0")
         if "meaning_text_size" not in profile_columns:
             cur.execute("ALTER TABLE profiles ADD COLUMN meaning_text_size REAL NOT NULL DEFAULT 26.0")
+        if "kanji_font_family" not in profile_columns:
+            cur.execute("ALTER TABLE profiles ADD COLUMN kanji_font_family TEXT NOT NULL DEFAULT 'Noto Sans CJK JP'")
+        if "meaning_font_family" not in profile_columns:
+            cur.execute("ALTER TABLE profiles ADD COLUMN meaning_font_family TEXT NOT NULL DEFAULT 'Arial'")
         self.conn.commit()
         self.ensure_default_profile()
 
@@ -342,13 +355,16 @@ class AppStorage:
             scheduler_mode=DEFAULT_SCHEDULER_MODE,
             desired_retention=DEFAULT_DESIRED_RETENTION,
             kanji_text_size=72.0,
+            flipped_kanji_text_size=20.0,
             meaning_text_size=26.0,
+            kanji_font_family="Noto Sans CJK JP",
+            meaning_font_family="Arial",
         )
         self.conn.execute(
             """
             INSERT INTO profiles
-            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, meaning_text_size)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, flipped_kanji_text_size, meaning_text_size, kanji_font_family, meaning_font_family)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 profile.id,
@@ -359,7 +375,10 @@ class AppStorage:
                 profile.scheduler_mode,
                 profile.desired_retention,
                 profile.kanji_text_size,
+                profile.flipped_kanji_text_size,
                 profile.meaning_text_size,
+                profile.kanji_font_family,
+                profile.meaning_font_family,
             ),
         )
         self.conn.commit()
@@ -401,13 +420,16 @@ class AppStorage:
             scheduler_mode=DEFAULT_SCHEDULER_MODE,
             desired_retention=DEFAULT_DESIRED_RETENTION,
             kanji_text_size=72.0,
+            flipped_kanji_text_size=20.0,
             meaning_text_size=26.0,
+            kanji_font_family="Noto Sans CJK JP",
+            meaning_font_family="Arial",
         )
         self.conn.execute(
             """
             INSERT INTO profiles
-            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, meaning_text_size)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, flipped_kanji_text_size, meaning_text_size, kanji_font_family, meaning_font_family)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 profile.id,
@@ -418,7 +440,10 @@ class AppStorage:
                 profile.scheduler_mode,
                 profile.desired_retention,
                 profile.kanji_text_size,
+                profile.flipped_kanji_text_size,
                 profile.meaning_text_size,
+                profile.kanji_font_family,
+                profile.meaning_font_family,
             ),
         )
         for deck in decks:
@@ -432,7 +457,7 @@ class AppStorage:
         self.conn.execute(
             """
             UPDATE profiles
-            SET name = ?, daily_new_target = ?, active_deck_id = ?, scheduler_mode = ?, desired_retention = ?, kanji_text_size = ?, meaning_text_size = ?
+            SET name = ?, daily_new_target = ?, active_deck_id = ?, scheduler_mode = ?, desired_retention = ?, kanji_text_size = ?, flipped_kanji_text_size = ?, meaning_text_size = ?, kanji_font_family = ?, meaning_font_family = ?
             WHERE id = ?
             """,
             (
@@ -442,7 +467,10 @@ class AppStorage:
                 profile.scheduler_mode,
                 profile.desired_retention,
                 profile.kanji_text_size,
+                profile.flipped_kanji_text_size,
                 profile.meaning_text_size,
+                profile.kanji_font_family,
+                profile.meaning_font_family,
                 profile.id,
             ),
         )
@@ -792,8 +820,8 @@ class AppStorage:
         self.conn.execute(
             """
             INSERT INTO profiles
-            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, flipped_kanji_text_size, meaning_text_size, kanji_font_family, meaning_font_family)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 created_at = excluded.created_at,
@@ -802,7 +830,11 @@ class AppStorage:
                 scheduler_mode = excluded.scheduler_mode,
                 desired_retention = excluded.desired_retention,
                 kanji_text_size = excluded.kanji_text_size,
+                flipped_kanji_text_size = excluded.flipped_kanji_text_size,
                 meaning_text_size = excluded.meaning_text_size
+                ,
+                kanji_font_family = excluded.kanji_font_family,
+                meaning_font_family = excluded.meaning_font_family
             """,
             (
                 profile.id,
@@ -813,7 +845,10 @@ class AppStorage:
                 profile.scheduler_mode,
                 profile.desired_retention,
                 profile.kanji_text_size,
+                profile.flipped_kanji_text_size,
                 profile.meaning_text_size,
+                profile.kanji_font_family,
+                profile.meaning_font_family,
             ),
         )
 
@@ -1037,7 +1072,10 @@ class AppStorage:
                 else DEFAULT_DESIRED_RETENTION
             ),
             kanji_text_size=float(row["kanji_text_size"]) if "kanji_text_size" in row_keys and row["kanji_text_size"] is not None else 72.0,
+            flipped_kanji_text_size=float(row["flipped_kanji_text_size"]) if "flipped_kanji_text_size" in row_keys and row["flipped_kanji_text_size"] is not None else 20.0,
             meaning_text_size=float(row["meaning_text_size"]) if "meaning_text_size" in row_keys and row["meaning_text_size"] is not None else 26.0,
+            kanji_font_family=str(row["kanji_font_family"]) if "kanji_font_family" in row_keys and row["kanji_font_family"] is not None else "Noto Sans CJK JP",
+            meaning_font_family=str(row["meaning_font_family"]) if "meaning_font_family" in row_keys and row["meaning_font_family"] is not None else "Arial",
         )
 
     def _profile_from_mapping(self, data: dict[str, Any]) -> Profile:
@@ -1050,7 +1088,10 @@ class AppStorage:
             scheduler_mode=str(data.get("scheduler_mode", DEFAULT_SCHEDULER_MODE)),
             desired_retention=float(data.get("desired_retention", DEFAULT_DESIRED_RETENTION)),
             kanji_text_size=float(data.get("kanji_text_size", 72.0)),
+            flipped_kanji_text_size=float(data.get("flipped_kanji_text_size", 20.0)),
             meaning_text_size=float(data.get("meaning_text_size", 26.0)),
+            kanji_font_family=str(data.get("kanji_font_family", "Noto Sans CJK JP")),
+            meaning_font_family=str(data.get("meaning_font_family", "Arial")),
         )
 
     def _deck_from_row(self, row: sqlite3.Row) -> Deck:
