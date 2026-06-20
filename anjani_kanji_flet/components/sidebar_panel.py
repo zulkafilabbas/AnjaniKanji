@@ -84,8 +84,10 @@ class SidebarPanel:
                     ft.Text("kt", color=ACCENT, size=18, weight=ft.FontWeight.BOLD),
                     ft.Container(height=10),
                     self._nav_button("dashboard", "dashboard"),
+                    self._nav_button("library", "library"),
                     self._nav_button("calendar", "calendar"),
-                    self._nav_button("import", "import"),
+                    self._nav_button("learn", "learn"),
+                    self._nav_button("settings", "settings"),
                     ft.Container(expand=True),
                     ft.ElevatedButton(
                         ">>",
@@ -146,8 +148,10 @@ class SidebarPanel:
                         spacing=8,
                         controls=[
                             self._nav_button("dashboard", "dashboard"),
+                            self._nav_button("library", "library"),
                             self._nav_button("calendar", "calendar"),
-                            self._nav_button("import", "import"),
+                            self._nav_button("learn", "learn"),
+                            self._nav_button("settings", "settings"),
                         ],
                     ),
                     ft.Divider(color=DIVIDER),

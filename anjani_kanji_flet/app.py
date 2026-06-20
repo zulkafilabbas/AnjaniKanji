@@ -347,11 +347,10 @@ class AnjaniKanjiDesktop:
     def build_primary_nav(self) -> ft.Control:
         tabs = [
             ("dashboard", "dashboard"),
-            ("learn", "learn"),
             ("library", "library"),
-            ("import", "import"),
-            ("settings", "settings"),
             ("calendar", "calendar"),
+            ("learn", "learn"),
+            ("settings", "settings"),
         ]
         return ft.Row(
             spacing=8,
@@ -811,16 +810,16 @@ class AnjaniKanjiDesktop:
         ).build()
 
     def build_main(self) -> ft.Control:
-        if self.view == "learn":
-            return self.build_learning_view()
-        if self.view == "calendar":
-            return self.build_calendar_view()
+        if self.view == "dashboard":
+            return self.build_dashboard_view()
         if self.view == "library":
             return self.build_library_view()
+        if self.view == "calendar":
+            return self.build_calendar_view()
+        if self.view == "learn":
+            return self.build_learning_view()
         if self.view == "settings":
             return self.build_settings_view()
-        if self.view == "import":
-            return self.build_import_view()
         return self.build_dashboard_view()
 
     def ensure_dashboard_shell(self) -> None:
@@ -1203,8 +1202,9 @@ class AnjaniKanjiDesktop:
                 controls=[
                     self.build_dashboard_top_bar(show_library_toggle=False),
                     ft.Text("library", color=TEXT, size=22, weight=ft.FontWeight.BOLD),
-                    ft.Text("Decks and deck-level stats live here. Import is separate.", color=TEXT_SOFT, size=12),
+                    ft.Text("Decks, deck-level stats, and imports live here.", color=TEXT_SOFT, size=12),
                     ft.Column(spacing=8, controls=deck_rows),
+                    self.build_import_view_component().build(),
                 ],
             ),
         )
@@ -1514,17 +1514,7 @@ class AnjaniKanjiDesktop:
         )
 
     def build_import_view(self) -> ft.Control:
-        return ft.Container(
-            expand=True,
-            padding=PAGE_PADDING,
-            content=ft.Column(
-                spacing=16,
-                controls=[
-                    self.build_dashboard_top_bar(show_library_toggle=False),
-                    self.build_import_view_component().build(),
-                ],
-            ),
-        )
+        return self.build_library_view()
 
     def build_calendar_view_component(self) -> CalendarView:
         """Create the calendar screen component from current app state."""
