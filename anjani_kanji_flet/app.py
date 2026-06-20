@@ -348,6 +348,9 @@ class AnjaniKanjiDesktop:
         tabs = [
             ("dashboard", "dashboard"),
             ("learn", "learn"),
+            ("library", "library"),
+            ("import", "import"),
+            ("settings", "settings"),
             ("calendar", "calendar"),
         ]
         return ft.Row(
@@ -397,6 +400,18 @@ class AnjaniKanjiDesktop:
         if not self.data:
             return
         self.controller.set_desired_retention(self.data.profile, value)
+        self.refresh_profile_view(self.data.profile.id)
+
+    def set_kanji_text_size(self, value: str) -> None:
+        if not self.data:
+            return
+        self.controller.set_kanji_text_size(self.data.profile, value)
+        self.refresh_profile_view(self.data.profile.id)
+
+    def set_meaning_text_size(self, value: str) -> None:
+        if not self.data:
+            return
+        self.controller.set_meaning_text_size(self.data.profile, value)
         self.refresh_profile_view(self.data.profile.id)
 
     def add_profile(self) -> None:
@@ -782,6 +797,12 @@ class AnjaniKanjiDesktop:
             return self.build_learning_view()
         if self.view == "calendar":
             return self.build_calendar_view()
+        if self.view == "library":
+            return self.build_library_view()
+        if self.view == "settings":
+            return self.build_settings_view()
+        if self.view == "import":
+            return self.build_import_view()
         return self.build_dashboard_view()
 
     def ensure_dashboard_shell(self) -> None:
@@ -867,7 +888,6 @@ class AnjaniKanjiDesktop:
                 controls=[
                     self.build_dashboard_top_bar(),
                     self.build_dashboard_summary_strip(),
-                    ft.Container(visible=self.dashboard_library_open, content=self.build_dashboard_library_panel()),
                     header_component.build_metrics(),
                     header_component.build_actions(),
                     self.build_dashboard_selection_grid(),
@@ -984,15 +1004,6 @@ class AnjaniKanjiDesktop:
                             ft.Text("Anjani Kanji", color=TEXT, size=18, weight=ft.FontWeight.BOLD),
                             self.build_primary_nav(),
                         ],
-                    ),
-                    ft.Container(
-                        visible=show_library_toggle,
-                        content=ft.ElevatedButton(
-                            "library",
-                            on_click=lambda _e: self.toggle_dashboard_library(),
-                            bgcolor=ACCENT_DIM if self.dashboard_library_open else PANEL_ALT,
-                            color=TEXT,
-                        ),
                     ),
                 ],
             ),
@@ -1127,44 +1138,86 @@ class AnjaniKanjiDesktop:
             self.dashboard_grid.controls = tiles
         return self.dashboard_grid
 
-    def build_dashboard_library_panel(self) -> ft.Control:
-        settings = SidebarPanel(
-            detail_visible=True,
-            compact_layout=False,
-            focus_mode=False,
-            panel_width=None,
-            view=self.view,
-            profiles=self.profiles,
-            profile_id=self.profile_id,
-            new_profile_name=self.new_profile_name,
-            data=self.data,
-            on_toggle_sidebar=self.toggle_sidebar,
-            on_set_view=self.set_view,
-            on_switch_profile=self.switch_profile,
-            on_new_profile_name_change=self.set_new_profile_name,
-            on_add_profile=self.add_profile,
-            on_delete_profile=self.delete_current_profile,
-            on_set_deck=self.set_deck,
-            on_delete_deck=self.delete_current_deck,
-            on_daily_target_change=self.set_daily_target,
-            on_scheduler_mode_change=self.set_scheduler_mode,
-            on_desired_retention_change=self.set_desired_retention,
-            on_import_backup=self.pick_import_backup,
-            on_import_backup_copy=self.pick_import_backup_copy,
-            on_begin_export=self.begin_export,
-            scheduler_package_available=self.scheduler_status.package_available,
-            scheduler_status_text=self.scheduler_status.status_text,
-            scheduler_detail_text=self.scheduler_status.detail_text,
-            builtin_scheduler_mode=DEFAULT_SCHEDULER_MODE,
-            package_scheduler_mode=PACKAGE_DR_SCHEDULER_MODE,
-            embedded=True,
-        ).build()
-        imports = self.build_import_view_component().build()
-        return ft.ResponsiveRow(
-            controls=[
-                ft.Container(col={"sm": 12, "lg": 5}, content=settings),
-                ft.Container(col={"sm": 12, "lg": 7}, content=imports),
-            ],
+    def build_library_view(self) -> ft.Control:
+        deck_rows = []
+        if not self.data or not self.data.decks:
+            deck_rows = [ft.Text("no decks yet - import a CSV", color=TEXT_SOFT, size=12)]
+        else:
+            for deck in self.data.decks:
+                active = self.data.deck and self.data.deck.id == deck.id
+                deck_rows.append(
+                    ft.Container(
+                        bgcolor=ACCENT_DIM if active else PANEL_ALT,
+                        border=border_all(ACCENT if active else DIVIDER),
+                        border_radius=PANEL_RADIUS,
+                        padding=pad_symmetric(horizontal=12, vertical=10),
+                        content=ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            controls=[
+                                ft.Text(deck.name, color=TEXT, size=13),
+                                ft.Text(f"{deck.count} cards", color=TEXT_SOFT, size=11),
+                            ],
+                        ),
+                    )
+                )
+        return ft.Container(
+            expand=True,
+            padding=PAGE_PADDING,
+            content=ft.Column(
+                spacing=16,
+                controls=[
+                    self.build_dashboard_top_bar(show_library_toggle=False),
+                    ft.Text("library", color=TEXT, size=22, weight=ft.FontWeight.BOLD),
+                    ft.Text("Decks and deck-level stats live here. Import is separate.", color=TEXT_SOFT, size=12),
+                    ft.Column(spacing=8, controls=deck_rows),
+                ],
+            ),
+        )
+
+    def build_settings_view(self) -> ft.Control:
+        profile = self.data.profile if self.data else None
+        return ft.Container(
+            expand=True,
+            padding=PAGE_PADDING,
+            content=ft.Column(
+                spacing=16,
+                controls=[
+                    self.build_dashboard_top_bar(show_library_toggle=False),
+                    ft.Text("settings", color=TEXT, size=22, weight=ft.FontWeight.BOLD),
+                    ft.Text("Adjust how Japanese and English text appears on the card.", color=TEXT_SOFT, size=12),
+                    ft.Container(
+                        bgcolor=SURFACE,
+                        border=border_all(DIVIDER),
+                        border_radius=PANEL_RADIUS,
+                        padding=pad_symmetric(horizontal=16, vertical=14),
+                        content=ft.Column(
+                            spacing=12,
+                            controls=[
+                                ft.Text("Japanese text size", color=TEXT, size=13),
+                                ft.TextField(
+                                    value=f"{profile.kanji_text_size:.0f}" if profile else "72",
+                                    on_submit=lambda e: self.set_kanji_text_size(e.control.value),
+                                    on_blur=lambda e: self.set_kanji_text_size(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
+                                ft.Text("Meaning text size", color=TEXT, size=13),
+                                ft.TextField(
+                                    value=f"{profile.meaning_text_size:.0f}" if profile else "26",
+                                    on_submit=lambda e: self.set_meaning_text_size(e.control.value),
+                                    on_blur=lambda e: self.set_meaning_text_size(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            ),
         )
 
     def toggle_dashboard_library(self) -> None:
@@ -1310,6 +1363,8 @@ class AnjaniKanjiDesktop:
             stroke_message=self.stroke_message,
             card_size=self.card_size(),
             canvas_size=self.canvas_size(),
+            kanji_text_size=self.data.profile.kanji_text_size if self.data else 72.0,
+            meaning_text_size=self.data.profile.meaning_text_size if self.data else 26.0,
             deck_total=self.data.total_cards if self.data else 0,
         )
         return KanjiCard(

@@ -33,6 +33,8 @@ class StudyCardViewModel:
     stroke_message: str
     card_size: float
     canvas_size: float
+    kanji_text_size: float
+    meaning_text_size: float
 
 
 @dataclass(frozen=True, slots=True)

@@ -135,6 +135,8 @@ class StudyController:
         stroke_message: str,
         card_size: float,
         canvas_size: float,
+        kanji_text_size: float,
+        meaning_text_size: float,
         deck_total: int,
     ) -> StudyCardViewModel:
         """Build the typed study-card state used by the flashcard component."""
@@ -153,6 +155,8 @@ class StudyController:
             stroke_message=stroke_message,
             card_size=card_size,
             canvas_size=canvas_size,
+            kanji_text_size=kanji_text_size,
+            meaning_text_size=meaning_text_size,
         )
 
     def build_dashboard_summary_model(
@@ -232,6 +236,28 @@ class StudyController:
         profile.desired_retention = retention
         self.storage.update_profile(profile)
         return retention
+
+    def set_kanji_text_size(self, profile: Profile, value: str) -> float:
+        """Persist the kanji font size and return the clamped value."""
+        try:
+            size = float(value)
+        except ValueError:
+            size = profile.kanji_text_size
+        size = max(36.0, min(120.0, size))
+        profile.kanji_text_size = size
+        self.storage.update_profile(profile)
+        return size
+
+    def set_meaning_text_size(self, profile: Profile, value: str) -> float:
+        """Persist the meaning font size and return the clamped value."""
+        try:
+            size = float(value)
+        except ValueError:
+            size = profile.meaning_text_size
+        size = max(14.0, min(48.0, size))
+        profile.meaning_text_size = size
+        self.storage.update_profile(profile)
+        return size
 
     def scheduler_status(self) -> SchedulerRuntimeStatus:
         """Return runtime package availability for the untouched local scheduler package."""

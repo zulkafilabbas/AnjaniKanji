@@ -74,6 +74,8 @@ class Profile:
     active_deck_id: str | None
     scheduler_mode: str
     desired_retention: float
+    kanji_text_size: float
+    meaning_text_size: float
 
 
 @dataclass
@@ -222,7 +224,9 @@ class AppStorage:
                 daily_new_target INTEGER NOT NULL,
                 active_deck_id TEXT,
                 scheduler_mode TEXT NOT NULL DEFAULT 'fsrs',
-                desired_retention REAL NOT NULL DEFAULT 0.9
+                desired_retention REAL NOT NULL DEFAULT 0.9,
+                kanji_text_size REAL NOT NULL DEFAULT 72.0,
+                meaning_text_size REAL NOT NULL DEFAULT 26.0
             );
 
             CREATE TABLE IF NOT EXISTS decks (
@@ -313,6 +317,10 @@ class AppStorage:
             cur.execute("ALTER TABLE profiles ADD COLUMN scheduler_mode TEXT NOT NULL DEFAULT 'fsrs'")
         if "desired_retention" not in profile_columns:
             cur.execute("ALTER TABLE profiles ADD COLUMN desired_retention REAL NOT NULL DEFAULT 0.9")
+        if "kanji_text_size" not in profile_columns:
+            cur.execute("ALTER TABLE profiles ADD COLUMN kanji_text_size REAL NOT NULL DEFAULT 72.0")
+        if "meaning_text_size" not in profile_columns:
+            cur.execute("ALTER TABLE profiles ADD COLUMN meaning_text_size REAL NOT NULL DEFAULT 26.0")
         self.conn.commit()
         self.ensure_default_profile()
 
@@ -333,12 +341,14 @@ class AppStorage:
             active_deck_id=first_deck["id"] if first_deck else None,
             scheduler_mode=DEFAULT_SCHEDULER_MODE,
             desired_retention=DEFAULT_DESIRED_RETENTION,
+            kanji_text_size=72.0,
+            meaning_text_size=26.0,
         )
         self.conn.execute(
             """
             INSERT INTO profiles
-            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, meaning_text_size)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 profile.id,
@@ -348,6 +358,8 @@ class AppStorage:
                 profile.active_deck_id,
                 profile.scheduler_mode,
                 profile.desired_retention,
+                profile.kanji_text_size,
+                profile.meaning_text_size,
             ),
         )
         self.conn.commit()
@@ -388,12 +400,14 @@ class AppStorage:
             active_deck_id=decks[0].id if decks else None,
             scheduler_mode=DEFAULT_SCHEDULER_MODE,
             desired_retention=DEFAULT_DESIRED_RETENTION,
+            kanji_text_size=72.0,
+            meaning_text_size=26.0,
         )
         self.conn.execute(
             """
             INSERT INTO profiles
-            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention, kanji_text_size, meaning_text_size)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 profile.id,
@@ -403,6 +417,8 @@ class AppStorage:
                 profile.active_deck_id,
                 profile.scheduler_mode,
                 profile.desired_retention,
+                profile.kanji_text_size,
+                profile.meaning_text_size,
             ),
         )
         for deck in decks:
@@ -416,7 +432,7 @@ class AppStorage:
         self.conn.execute(
             """
             UPDATE profiles
-            SET name = ?, daily_new_target = ?, active_deck_id = ?, scheduler_mode = ?, desired_retention = ?
+            SET name = ?, daily_new_target = ?, active_deck_id = ?, scheduler_mode = ?, desired_retention = ?, kanji_text_size = ?, meaning_text_size = ?
             WHERE id = ?
             """,
             (
@@ -425,6 +441,8 @@ class AppStorage:
                 profile.active_deck_id,
                 profile.scheduler_mode,
                 profile.desired_retention,
+                profile.kanji_text_size,
+                profile.meaning_text_size,
                 profile.id,
             ),
         )
@@ -775,14 +793,16 @@ class AppStorage:
             """
             INSERT INTO profiles
             (id, name, created_at, daily_new_target, active_deck_id, scheduler_mode, desired_retention)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 created_at = excluded.created_at,
                 daily_new_target = excluded.daily_new_target,
                 active_deck_id = excluded.active_deck_id,
                 scheduler_mode = excluded.scheduler_mode,
-                desired_retention = excluded.desired_retention
+                desired_retention = excluded.desired_retention,
+                kanji_text_size = excluded.kanji_text_size,
+                meaning_text_size = excluded.meaning_text_size
             """,
             (
                 profile.id,
@@ -792,6 +812,8 @@ class AppStorage:
                 profile.active_deck_id,
                 profile.scheduler_mode,
                 profile.desired_retention,
+                profile.kanji_text_size,
+                profile.meaning_text_size,
             ),
         )
 
@@ -1014,6 +1036,8 @@ class AppStorage:
                 if "desired_retention" in row_keys and row["desired_retention"] is not None
                 else DEFAULT_DESIRED_RETENTION
             ),
+            kanji_text_size=float(row["kanji_text_size"]) if "kanji_text_size" in row_keys and row["kanji_text_size"] is not None else 72.0,
+            meaning_text_size=float(row["meaning_text_size"]) if "meaning_text_size" in row_keys and row["meaning_text_size"] is not None else 26.0,
         )
 
     def _profile_from_mapping(self, data: dict[str, Any]) -> Profile:
@@ -1025,6 +1049,8 @@ class AppStorage:
             active_deck_id=str(data["active_deck_id"]) if data.get("active_deck_id") else None,
             scheduler_mode=str(data.get("scheduler_mode", DEFAULT_SCHEDULER_MODE)),
             desired_retention=float(data.get("desired_retention", DEFAULT_DESIRED_RETENTION)),
+            kanji_text_size=float(data.get("kanji_text_size", 72.0)),
+            meaning_text_size=float(data.get("meaning_text_size", 26.0)),
         )
 
     def _deck_from_row(self, row: sqlite3.Row) -> Deck:

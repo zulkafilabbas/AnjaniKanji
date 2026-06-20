@@ -77,9 +77,9 @@ class KanjiCard:
             )
 
         if self.model.flipped:
-            meaning_controls: list[ft.Control] = [ft.Text(self.model.active.character, color=MUTED, size=13)]
+            meaning_controls: list[ft.Control] = [ft.Text(self.model.active.character, color=MUTED, size=max(14, self.model.kanji_text_size * 0.24))]
             if self.model.active.meanings:
-                meaning_controls.extend(ft.Text(item, color=TEXT, size=26) for item in self.model.active.meanings)
+                meaning_controls.extend(ft.Text(item, color=TEXT, size=self.model.meaning_text_size) for item in self.model.active.meanings)
             else:
                 meaning_controls.append(ft.Text("no meanings", color=MUTED, size=14))
             content: ft.Control = ft.Column(
@@ -101,7 +101,7 @@ class KanjiCard:
                     ft.Text(
                         self.model.active.character,
                         color=TEXT,
-                        size=KANJI_FOCUS_SIZE if self.model.focus_mode else KANJI_IDLE_SIZE,
+                        size=self.model.kanji_text_size if self.model.focus_mode else max(56.0, self.model.kanji_text_size - 6.0),
                         weight=ft.FontWeight.BOLD,
                     ),
                     ft.Text(self.model.stroke_message, color=MUTED, size=12, text_align=ft.TextAlign.CENTER),
