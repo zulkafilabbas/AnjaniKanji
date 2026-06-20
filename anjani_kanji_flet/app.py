@@ -121,6 +121,8 @@ class AnjaniKanjiDesktop:
         self.shell_host: ft.Container | None = None
         self.sidebar_open = False
         self.dashboard_library_open = False
+        self.settings_typography_open = True
+        self.settings_profiles_open = True
 
         self.file_picker = ft.FilePicker(on_result=self.on_files_picked)
         self.save_picker = ft.FilePicker(on_result=self.on_save_picked)
@@ -430,6 +432,14 @@ class AnjaniKanjiDesktop:
             return
         self.controller.set_meaning_font_family(self.data.profile, value)
         self.refresh_profile_view(self.data.profile.id)
+
+    def toggle_settings_typography(self) -> None:
+        self.settings_typography_open = not self.settings_typography_open
+        self.render()
+
+    def toggle_settings_profiles(self) -> None:
+        self.settings_profiles_open = not self.settings_profiles_open
+        self.render()
 
     def add_profile(self) -> None:
         profile = self.controller.create_profile(self.new_profile_name)
@@ -1211,6 +1221,7 @@ class AnjaniKanjiDesktop:
 
     def build_settings_view(self) -> ft.Control:
         profile = self.data.profile if self.data else None
+        profile_options = [ft.dropdown.Option(item.id, item.name) for item in self.profiles]
         return ft.Container(
             expand=True,
             padding=PAGE_PADDING,
@@ -1219,13 +1230,11 @@ class AnjaniKanjiDesktop:
                 controls=[
                     self.build_dashboard_top_bar(show_library_toggle=False),
                     ft.Text("settings", color=TEXT, size=22, weight=ft.FontWeight.BOLD),
-                    ft.Text("Adjust how Japanese and English text appears on the card.", color=TEXT_SOFT, size=12),
-                    ft.Container(
-                        bgcolor=SURFACE,
-                        border=border_all(DIVIDER),
-                        border_radius=PANEL_RADIUS,
-                        padding=pad_symmetric(horizontal=16, vertical=14),
-                        content=ft.Column(
+                    self.build_settings_section(
+                        title="Typography",
+                        open_state=self.settings_typography_open,
+                        toggle_action=self.toggle_settings_typography,
+                        body=ft.Column(
                             spacing=12,
                             controls=[
                                 ft.Text("Japanese text size", color=TEXT, size=13),
@@ -1281,6 +1290,77 @@ class AnjaniKanjiDesktop:
                             ],
                         ),
                     ),
+                    self.build_settings_section(
+                        title="Profiles",
+                        open_state=self.settings_profiles_open,
+                        toggle_action=self.toggle_settings_profiles,
+                        body=ft.Column(
+                            spacing=12,
+                            controls=[
+                                ft.Text("Switch, create, or delete profiles here.", color=TEXT_SOFT, size=12),
+                                ft.Dropdown(
+                                    value=self.profile_id,
+                                    options=profile_options,
+                                    on_change=lambda e: self.switch_profile(e.control.value),
+                                    text_style=ft.TextStyle(color=TEXT),
+                                    bgcolor=PANEL_ALT,
+                                    color=TEXT,
+                                    border_color=DIVIDER,
+                                ),
+                                ft.Row(
+                                    wrap=True,
+                                    controls=[
+                                        ft.TextField(
+                                            value=self.new_profile_name,
+                                            hint_text="new profile",
+                                            on_change=lambda e: self.set_new_profile_name(e.control.value),
+                                            expand=True,
+                                            color=TEXT,
+                                            bgcolor=PANEL_ALT,
+                                            border_color=DIVIDER,
+                                            text_size=12,
+                                        ),
+                                        ft.ElevatedButton("add profile", on_click=lambda _e: self.add_profile(), bgcolor=ACCENT_DIM, color=TEXT),
+                                        ft.ElevatedButton(
+                                            "delete profile",
+                                            on_click=lambda _e: self.delete_current_profile(),
+                                            bgcolor=PANEL_ALT,
+                                            color=TEXT,
+                                            disabled=self.profile_id is None,
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
+            ),
+        )
+
+    def build_settings_section(
+        self,
+        *,
+        title: str,
+        open_state: bool,
+        toggle_action,
+        body: ft.Control,
+    ) -> ft.Control:
+        return ft.Container(
+            bgcolor=SURFACE,
+            border=border_all(DIVIDER),
+            border_radius=PANEL_RADIUS,
+            padding=pad_symmetric(horizontal=16, vertical=14),
+            content=ft.Column(
+                spacing=12,
+                controls=[
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            ft.Text(title, color=TEXT, size=15, weight=ft.FontWeight.BOLD),
+                            ft.ElevatedButton("hide" if open_state else "show", on_click=lambda _e: toggle_action(), bgcolor=PANEL_ALT, color=TEXT),
+                        ],
+                    ),
+                    body if open_state else ft.Container(height=0),
                 ],
             ),
         )

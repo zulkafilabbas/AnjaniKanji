@@ -101,7 +101,6 @@ class SidebarPanel:
         )
 
     def _build_expanded_sidebar(self) -> ft.Control:
-        profile_options = [ft.dropdown.Option(profile.id, profile.name) for profile in self.profiles]
         deck_buttons: list[ft.Control] = []
         if self.data and self.data.decks:
             for deck in self.data.decks:
@@ -166,39 +165,6 @@ class SidebarPanel:
                 scroll=ft.ScrollMode.AUTO,
                 controls=[
                     *header_controls,
-                    ft.Text("profile", color=MUTED, size=11),
-                    ft.Dropdown(
-                        value=self.profile_id,
-                        options=profile_options,
-                        on_change=lambda e: self.on_switch_profile(e.control.value),
-                        text_style=ft.TextStyle(color=TEXT),
-                        bgcolor=BG,
-                        color=TEXT,
-                        border_color=BORDER,
-                    ),
-                    ft.Row(
-                        controls=[
-                            ft.TextField(
-                                value=self.new_profile_name,
-                                hint_text="new profile",
-                                on_change=lambda e: self.on_new_profile_name_change(e.control.value),
-                                expand=True,
-                                color=TEXT,
-                                bgcolor=BG,
-                                border_color=BORDER,
-                                text_size=12,
-                            ),
-                            ft.ElevatedButton("add", on_click=lambda _e: self.on_add_profile(), bgcolor=ACCENT_DIM, color=TEXT),
-                        ]
-                    ),
-                    ft.ElevatedButton(
-                        "delete current profile",
-                        on_click=lambda _e: self.on_delete_profile(),
-                        bgcolor=PANEL_ALT, # Changed from "#ef7d73"
-                        color=TEXT,
-                        disabled=self.profile_id is None,
-                    ),
-                    ft.Divider(color=DIVIDER),
                     ft.Text("decks", color=MUTED, size=11),
                     ft.Column(spacing=8, controls=deck_buttons),
                     ft.ElevatedButton(
