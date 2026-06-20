@@ -433,14 +433,6 @@ class AnjaniKanjiDesktop:
         self.controller.set_meaning_font_family(self.data.profile, value)
         self.refresh_profile_view(self.data.profile.id)
 
-    def toggle_settings_typography(self) -> None:
-        self.settings_typography_open = not self.settings_typography_open
-        self.render()
-
-    def toggle_settings_profiles(self) -> None:
-        self.settings_profiles_open = not self.settings_profiles_open
-        self.render()
-
     def add_profile(self) -> None:
         profile = self.controller.create_profile(self.new_profile_name)
         if not profile:
@@ -476,6 +468,17 @@ class AnjaniKanjiDesktop:
         self.profile_id = None
         self.add_status_log(f"deleted profile {profile_name}")
         self.refresh_profile_view(None)
+
+    def delete_profile(self, profile_id: str) -> None:
+        if not profile_id:
+            return
+        if profile_id == self.profile_id:
+            self.delete_current_profile()
+            return
+        if not self.controller.delete_profile(profile_id):
+            return
+        self.add_status_log(f"deleted profile {profile_id}")
+        self.refresh_profile_view(self.profile_id)
 
     def delete_current_deck(self) -> None:
         if not self.data or not self.data.deck:
@@ -1221,23 +1224,112 @@ class AnjaniKanjiDesktop:
 
     def build_settings_view(self) -> ft.Control:
         profile = self.data.profile if self.data else None
-        profile_options = [ft.dropdown.Option(item.id, item.name) for item in self.profiles]
+        profile_options = [
+            ft.dropdown.Option(key=item.id, text=item.name)
+            for item in self.profiles
+        ]
+        profile_list_controls: list[ft.Control] = []
+        for item in self.profiles:
+            is_active = item.id == self.profile_id
+            profile_list_controls.append(
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        ft.Text(
+                            f"{item.name} (active)" if is_active else item.name,
+                            color=TEXT,
+                            size=13,
+                            weight=ft.FontWeight.BOLD if is_active else ft.FontWeight.NORMAL,
+                        ),
+                        ft.ElevatedButton(
+                            "delete",
+                            on_click=lambda _e, profile_id=item.id: self.delete_profile(profile_id),
+                            bgcolor=PANEL_ALT,
+                            color=TEXT,
+                            disabled=is_active and len(self.profiles) <= 1,
+                        ),
+                    ],
+                )
+            )
         return ft.Container(
             expand=True,
             padding=PAGE_PADDING,
             content=ft.Column(
                 spacing=16,
+                scroll=ft.ScrollMode.AUTO,
                 controls=[
                     self.build_dashboard_top_bar(show_library_toggle=False),
                     ft.Text("settings", color=TEXT, size=22, weight=ft.FontWeight.BOLD),
-                    self.build_settings_section(
-                        title="Typography",
-                        open_state=self.settings_typography_open,
-                        toggle_action=self.toggle_settings_typography,
-                        body=ft.Column(
+                    ft.Container(
+                        bgcolor=SURFACE,
+                        border=border_all(DIVIDER),
+                        border_radius=PANEL_RADIUS,
+                        padding=pad_symmetric(horizontal=16, vertical=14),
+                        content=ft.Column(
                             spacing=12,
                             controls=[
-                                ft.Text("Japanese text size", color=TEXT, size=13),
+                                ft.Text("profiles", color=TEXT, size=18, weight=ft.FontWeight.BOLD),
+                                ft.Text("select, add, or delete a profile", color=TEXT_SOFT, size=12),
+                                ft.Dropdown(
+                                    value=self.profile_id,
+                                    options=profile_options,
+                                    on_change=lambda e: self.switch_profile(e.control.value),
+                                    bgcolor=PANEL_ALT,
+                                    color=TEXT,
+                                    border_color=DIVIDER,
+                                    text_style=ft.TextStyle(color=TEXT),
+                                ),
+                                ft.Column(
+                                    spacing=8,
+                                    controls=profile_list_controls or [ft.Text("no profiles yet", color=TEXT_SOFT, size=12)],
+                                ),
+                                ft.TextField(
+                                    value=self.new_profile_name,
+                                    hint_text="new profile name",
+                                    on_change=lambda e: self.set_new_profile_name(e.control.value),
+                                    color=TEXT,
+                                    bgcolor=PANEL_ALT,
+                                    border_color=DIVIDER,
+                                    text_size=12,
+                                ),
+                                ft.Row(
+                                    wrap=True,
+                                    controls=[
+                                        ft.ElevatedButton(
+                                            "add profile",
+                                            on_click=lambda _e: self.add_profile(),
+                                            bgcolor=ACCENT_DIM,
+                                            color=TEXT,
+                                        ),
+                                        ft.ElevatedButton(
+                                            "delete current profile",
+                                            on_click=lambda _e: self.delete_current_profile(),
+                                            bgcolor=PANEL_ALT,
+                                            color=TEXT,
+                                            disabled=self.profile_id is None,
+                                        ),
+                                    ],
+                                ),
+                                ft.Text(
+                                    f"current profile: {profile.name if profile else 'none'}",
+                                    color=TEXT_SOFT,
+                                    size=11,
+                                ),
+                            ],
+                        ),
+                    ),
+                    ft.Container(
+                        bgcolor=SURFACE,
+                        border=border_all(DIVIDER),
+                        border_radius=PANEL_RADIUS,
+                        padding=pad_symmetric(horizontal=16, vertical=14),
+                        content=ft.Column(
+                            spacing=12,
+                            controls=[
+                                ft.Text("typography", color=TEXT, size=18, weight=ft.FontWeight.BOLD),
+                                ft.Text("adjust card text size and font family", color=TEXT_SOFT, size=12),
+                                ft.Text("japanese text size", color=TEXT, size=13),
                                 ft.TextField(
                                     value=f"{profile.kanji_text_size:.0f}" if profile else "72",
                                     on_submit=lambda e: self.set_kanji_text_size(e.control.value),
@@ -1247,7 +1339,7 @@ class AnjaniKanjiDesktop:
                                     border_color=DIVIDER,
                                     text_size=12,
                                 ),
-                                ft.Text("Japanese flipped size", color=TEXT, size=13),
+                                ft.Text("japanese flipped size", color=TEXT, size=13),
                                 ft.TextField(
                                     value=f"{profile.flipped_kanji_text_size:.0f}" if profile else "20",
                                     on_submit=lambda e: self.set_flipped_kanji_text_size(e.control.value),
@@ -1257,7 +1349,7 @@ class AnjaniKanjiDesktop:
                                     border_color=DIVIDER,
                                     text_size=12,
                                 ),
-                                ft.Text("Meaning text size", color=TEXT, size=13),
+                                ft.Text("meaning text size", color=TEXT, size=13),
                                 ft.TextField(
                                     value=f"{profile.meaning_text_size:.0f}" if profile else "26",
                                     on_submit=lambda e: self.set_meaning_text_size(e.control.value),
@@ -1267,7 +1359,7 @@ class AnjaniKanjiDesktop:
                                     border_color=DIVIDER,
                                     text_size=12,
                                 ),
-                                ft.Text("Japanese font family", color=TEXT, size=13),
+                                ft.Text("japanese font family", color=TEXT, size=13),
                                 ft.TextField(
                                     value=profile.kanji_font_family if profile else "Noto Sans CJK JP",
                                     on_submit=lambda e: self.set_kanji_font_family(e.control.value),
@@ -1277,7 +1369,7 @@ class AnjaniKanjiDesktop:
                                     border_color=DIVIDER,
                                     text_size=12,
                                 ),
-                                ft.Text("Meaning font family", color=TEXT, size=13),
+                                ft.Text("meaning font family", color=TEXT, size=13),
                                 ft.TextField(
                                     value=profile.meaning_font_family if profile else "Arial",
                                     on_submit=lambda e: self.set_meaning_font_family(e.control.value),
@@ -1290,77 +1382,6 @@ class AnjaniKanjiDesktop:
                             ],
                         ),
                     ),
-                    self.build_settings_section(
-                        title="Profiles",
-                        open_state=self.settings_profiles_open,
-                        toggle_action=self.toggle_settings_profiles,
-                        body=ft.Column(
-                            spacing=12,
-                            controls=[
-                                ft.Text("Switch, create, or delete profiles here.", color=TEXT_SOFT, size=12),
-                                ft.Dropdown(
-                                    value=self.profile_id,
-                                    options=profile_options,
-                                    on_change=lambda e: self.switch_profile(e.control.value),
-                                    text_style=ft.TextStyle(color=TEXT),
-                                    bgcolor=PANEL_ALT,
-                                    color=TEXT,
-                                    border_color=DIVIDER,
-                                ),
-                                ft.Row(
-                                    wrap=True,
-                                    controls=[
-                                        ft.TextField(
-                                            value=self.new_profile_name,
-                                            hint_text="new profile",
-                                            on_change=lambda e: self.set_new_profile_name(e.control.value),
-                                            expand=True,
-                                            color=TEXT,
-                                            bgcolor=PANEL_ALT,
-                                            border_color=DIVIDER,
-                                            text_size=12,
-                                        ),
-                                        ft.ElevatedButton("add profile", on_click=lambda _e: self.add_profile(), bgcolor=ACCENT_DIM, color=TEXT),
-                                        ft.ElevatedButton(
-                                            "delete profile",
-                                            on_click=lambda _e: self.delete_current_profile(),
-                                            bgcolor=PANEL_ALT,
-                                            color=TEXT,
-                                            disabled=self.profile_id is None,
-                                        ),
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ),
-                ],
-            ),
-        )
-
-    def build_settings_section(
-        self,
-        *,
-        title: str,
-        open_state: bool,
-        toggle_action,
-        body: ft.Control,
-    ) -> ft.Control:
-        return ft.Container(
-            bgcolor=SURFACE,
-            border=border_all(DIVIDER),
-            border_radius=PANEL_RADIUS,
-            padding=pad_symmetric(horizontal=16, vertical=14),
-            content=ft.Column(
-                spacing=12,
-                controls=[
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        controls=[
-                            ft.Text(title, color=TEXT, size=15, weight=ft.FontWeight.BOLD),
-                            ft.ElevatedButton("hide" if open_state else "show", on_click=lambda _e: toggle_action(), bgcolor=PANEL_ALT, color=TEXT),
-                        ],
-                    ),
-                    body if open_state else ft.Container(height=0),
                 ],
             ),
         )

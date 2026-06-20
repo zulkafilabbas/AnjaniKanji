@@ -816,6 +816,11 @@ class AppStorage:
                 active_deck_id=profile.active_deck_id,
                 scheduler_mode=profile.scheduler_mode,
                 desired_retention=profile.desired_retention,
+                kanji_text_size=profile.kanji_text_size,
+                flipped_kanji_text_size=profile.flipped_kanji_text_size,
+                meaning_text_size=profile.meaning_text_size,
+                kanji_font_family=profile.kanji_font_family,
+                meaning_font_family=profile.meaning_font_family,
             )
         self.conn.execute(
             """
@@ -831,8 +836,7 @@ class AppStorage:
                 desired_retention = excluded.desired_retention,
                 kanji_text_size = excluded.kanji_text_size,
                 flipped_kanji_text_size = excluded.flipped_kanji_text_size,
-                meaning_text_size = excluded.meaning_text_size
-                ,
+                meaning_text_size = excluded.meaning_text_size,
                 kanji_font_family = excluded.kanji_font_family,
                 meaning_font_family = excluded.meaning_font_family
             """,
