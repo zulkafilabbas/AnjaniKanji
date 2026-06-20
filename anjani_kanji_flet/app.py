@@ -1401,6 +1401,8 @@ class AnjaniKanjiDesktop:
             stroke_message=self.stroke_message,
             card_size=self.card_size(),
             canvas_size=self.canvas_size(),
+            kanji_text_size=self.data.profile.kanji_text_size if self.data else 72.0,
+            meaning_text_size=self.data.profile.meaning_text_size if self.data else 26.0,
             deck_total=self.data.total_cards if self.data else 0,
         )
         if not model.active:
