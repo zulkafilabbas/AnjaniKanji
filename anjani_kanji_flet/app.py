@@ -1012,6 +1012,19 @@ class AnjaniKanjiDesktop:
     def build_dashboard_summary_strip(self) -> ft.Control:
         profile_name = self.data.profile.name if self.data else "no profile"
         deck_name = self.data.deck.name if self.data and self.data.deck else "no deck selected"
+        if self.data and self.data.decks:
+            deck_selector: ft.Control = ft.Dropdown(
+                value=self.data.deck.id if self.data.deck else None,
+                options=[ft.dropdown.Option(deck.id, deck.name) for deck in self.data.decks],
+                on_change=lambda e: self.set_deck(e.control.value),
+                text_style=ft.TextStyle(color=TEXT),
+                bgcolor=PANEL_ALT,
+                color=TEXT,
+                border_color=DIVIDER,
+                width=min(360, max(220, self.card_size() * 0.72)),
+            )
+        else:
+            deck_selector = ft.Text("import a CSV to create a deck", color=TEXT_SOFT, size=12)
         return ft.Container(
             bgcolor=SURFACE,
             border=border_all(DIVIDER),
@@ -1020,9 +1033,11 @@ class AnjaniKanjiDesktop:
             content=ft.Row(
                 wrap=True,
                 spacing=18,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     ft.Text(f"profile {profile_name}", color=TEXT_SOFT, size=12),
                     ft.Text(f"deck {deck_name}", color=TEXT_SOFT, size=12),
+                    deck_selector,
                 ],
             ),
         )
@@ -1151,6 +1166,8 @@ class AnjaniKanjiDesktop:
                         border=border_all(ACCENT if active else DIVIDER),
                         border_radius=PANEL_RADIUS,
                         padding=pad_symmetric(horizontal=12, vertical=10),
+                        ink=True,
+                        on_click=lambda _e, deck_id=deck.id: self.set_deck(deck_id),
                         content=ft.Row(
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             controls=[
