@@ -166,7 +166,7 @@ class KanjiCard:
                     spacing=8,
                     controls=[
                         self._secondary_button("<", self.on_prev),
-                        self._secondary_button("play", self.on_play),
+                        self._secondary_button("play", self.on_play, autofocus=True),
                         self._secondary_button("flip", self.on_flip),
                         self._secondary_button(">", self.on_next),
                     ],
@@ -192,12 +192,13 @@ class KanjiCard:
             ),
         )
 
-    def _secondary_button(self, label: str, action: Callable[[], Any]) -> ft.Control:
+    def _secondary_button(self, label: str, action: Callable[[], Any], *, autofocus: bool = False) -> ft.Control:
         """Build a lower-emphasis session control button."""
         return ft.ElevatedButton(
             label,
             on_click=lambda _e: action(),
             bgcolor=PANEL_ALT,
             color=TEXT,
+            autofocus=autofocus,
             style=ft.ButtonStyle(padding=ft.Padding(12, 10, 12, 10)),
         )

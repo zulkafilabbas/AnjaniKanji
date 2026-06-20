@@ -1653,20 +1653,19 @@ class AnjaniKanjiDesktop:
             self.render()
 
     def handle_keyboard_event(self, event: ft.KeyboardEvent) -> None:
+        if self.view != "learn":
+            return
+
         key = (event.key or "").strip().lower()
 
         if key in {"arrow left", "arrowleft", "left"}:
             if self.session or self.view == "learn":
                 self.move_prev()
-            elif self.view == "dashboard":
-                self.scroll_filmstrip(-(self.filmstrip_tile_size() + FILMSTRIP_GAP))
             return
 
         if key in {"arrow right", "arrowright", "right"}:
             if self.session or self.view == "learn":
                 self.move_next()
-            elif self.view == "dashboard":
-                self.scroll_filmstrip(self.filmstrip_tile_size() + FILMSTRIP_GAP)
             return
 
         if key in {" ", "space", "spacebar"}:
