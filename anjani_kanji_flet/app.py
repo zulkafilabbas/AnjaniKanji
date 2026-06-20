@@ -1652,6 +1652,51 @@ class AnjaniKanjiDesktop:
         else:
             self.render()
 
+    def handle_keyboard_event(self, event: ft.KeyboardEvent) -> None:
+        key = (event.key or "").strip().lower()
+
+        if key in {"arrow left", "arrowleft", "left"}:
+            if self.session or self.view == "learn":
+                self.move_prev()
+            elif self.view == "dashboard":
+                self.scroll_filmstrip(-(self.filmstrip_tile_size() + FILMSTRIP_GAP))
+            return
+
+        if key in {"arrow right", "arrowright", "right"}:
+            if self.session or self.view == "learn":
+                self.move_next()
+            elif self.view == "dashboard":
+                self.scroll_filmstrip(self.filmstrip_tile_size() + FILMSTRIP_GAP)
+            return
+
+        if key in {" ", "space", "spacebar"}:
+            self.page.run_task(self.animate_strokes)
+            return
+
+        if key == "f":
+            self.toggle_flip()
+            return
+
+        if key == "s" and self.active_character():
+            self.toggle_selected(self.active_character() or "")
+            return
+
+        if key == "1":
+            self.submit_rating("again")
+            return
+
+        if key == "2":
+            self.submit_rating("hard")
+            return
+
+        if key == "3":
+            self.submit_rating("good")
+            return
+
+        if key == "4":
+            self.submit_rating("easy")
+            return
+
     def render(self) -> None:
         self.ensure_app_shell()
         if self.main_host:
@@ -1668,36 +1713,5 @@ class AnjaniKanjiDesktop:
 
 def main(page: ft.Page) -> None:
     app = AnjaniKanjiDesktop(page)
-
-    async def on_keyboard(event: ft.KeyboardEvent) -> None:
-        if event.key == "Arrow Left":
-            if app.session:
-                app.move_prev()
-            elif app.view == "learn":
-                app.move_prev()
-            elif app.view == "dashboard":
-                app.scroll_filmstrip(-(app.filmstrip_tile_size() + FILMSTRIP_GAP))
-        elif event.key == "Arrow Right":
-            if app.session:
-                app.move_next()
-            elif app.view == "learn":
-                app.move_next()
-            elif app.view == "dashboard":
-                app.scroll_filmstrip(app.filmstrip_tile_size() + FILMSTRIP_GAP)
-        elif event.key == " ":
-            await app.animate_strokes()
-        elif event.key.lower() == "f":
-            app.toggle_flip()
-        elif event.key.lower() == "s" and app.active_character():
-            app.toggle_selected(app.active_character() or "")
-        elif event.key == "1":
-            app.submit_rating("again")
-        elif event.key == "2":
-            app.submit_rating("hard")
-        elif event.key == "3":
-            app.submit_rating("good")
-        elif event.key == "4":
-            app.submit_rating("easy")
-
-    page.on_keyboard_event = lambda e: page.run_task(on_keyboard, e)
+    page.on_keyboard_event = app.handle_keyboard_event
 
