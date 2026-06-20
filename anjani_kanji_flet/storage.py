@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import sys
 import sqlite3
 import threading
 import uuid
@@ -31,33 +32,31 @@ DEFAULT_PROFILE_ID = "local-default"
 DEFAULT_DECK_ID = "deck-default"
 F = TypeVar("F", bound=Callable[..., Any])
 APP_DIR_NAME = "AnjaniKanji"
-LEGACY_APP_DIR_NAME = "KanjiFocus"
 APP_DB_NAME = "anjani_kanji.db"
-LEGACY_DB_NAME = "kanji_focus.db"
 
 
 def data_dir() -> Path:
-    appdata = os.getenv("LOCALAPPDATA")
-    if appdata:
-        preferred = Path(appdata) / APP_DIR_NAME
-        legacy = Path(appdata) / LEGACY_APP_DIR_NAME
-    else:
-        preferred = Path.home() / ".anjani_kanji"
-        legacy = Path.home() / ".kanji_focus"
-    if preferred.exists():
-        return preferred
-    if legacy.exists():
-        return legacy
-    return preferred
+    """Return the canonical cross-platform app data directory."""
+    return _preferred_data_dir()
+
+
+def _preferred_data_dir() -> Path:
+    if sys.platform == "win32":
+        appdata = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA")
+        if appdata:
+            return Path(appdata) / APP_DIR_NAME
+    elif sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / APP_DIR_NAME
+    xdg_data_home = os.getenv("XDG_DATA_HOME")
+    if xdg_data_home:
+        return Path(xdg_data_home) / APP_DIR_NAME
+    return Path.home() / ".local" / "share" / APP_DIR_NAME
 
 
 def db_path() -> Path:
     root = data_dir()
     root.mkdir(parents=True, exist_ok=True)
-    legacy_path = root / LEGACY_DB_NAME
     preferred_path = root / APP_DB_NAME
-    if legacy_path.exists() and not preferred_path.exists():
-        return legacy_path
     return preferred_path
 
 
