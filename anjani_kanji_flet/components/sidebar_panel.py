@@ -42,7 +42,6 @@ class SidebarPanel:
     profiles: list[Profile]
     profile_id: str | None
     new_profile_name: str
-    export_passphrase: str
     data: DashboardData | None
     on_toggle_sidebar: Callable[[], Any]
     on_set_view: Callable[[str], Any]
@@ -55,7 +54,6 @@ class SidebarPanel:
     on_daily_target_change: Callable[[str], Any]
     on_scheduler_mode_change: Callable[[str], Any]
     on_desired_retention_change: Callable[[str], Any]
-    on_export_passphrase_change: Callable[[str], Any]
     on_import_backup: Callable[[], Any]
     on_import_backup_copy: Callable[[], Any]
     on_begin_export: Callable[[], Any]
@@ -249,17 +247,6 @@ class SidebarPanel:
                     ),
                     ft.Divider(color=DIVIDER),
                     ft.Text("backup", color=MUTED, size=11),
-                    ft.TextField(
-                        value=self.export_passphrase,
-                        hint_text="optional passphrase",
-                        password=True,
-                        can_reveal_password=True,
-                        on_change=lambda e: self.on_export_passphrase_change(e.control.value),
-                        color=TEXT,
-                        bgcolor=BG,
-                        border_color=BORDER,
-                        text_size=12,
-                    ),
                     ft.Row(
                         wrap=True,
                         controls=[

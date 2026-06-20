@@ -93,7 +93,6 @@ class AnjaniKanjiDesktop:
         self.pos = 0
         self.flipped = False
         self.duration_sec = 3.0
-        self.export_passphrase = ""
         self.new_profile_name = ""
         self.import_log: list[StatusLogEntryViewModel] = []
         self.pending_export_text: str | None = None
@@ -408,9 +407,6 @@ class AnjaniKanjiDesktop:
     def set_new_profile_name(self, value: str) -> None:
         self.new_profile_name = value
 
-    def set_export_passphrase(self, value: str) -> None:
-        self.export_passphrase = value
-
     def switch_profile(self, profile_id: str | None) -> None:
         if not profile_id:
             return
@@ -675,7 +671,7 @@ class AnjaniKanjiDesktop:
 
     def import_profile_backup_path(self, path: Path, *, as_copy: bool) -> None:
         try:
-            result = self.controller.import_profile_backup(path, self.export_passphrase, as_copy=as_copy)
+            result = self.controller.import_profile_backup(path, as_copy=as_copy)
         except ValueError as exc:
             self.add_status_log(f"error {path.name}: {exc}", level="error")
             self.render()
@@ -692,7 +688,7 @@ class AnjaniKanjiDesktop:
     def begin_export(self) -> None:
         if not self.data:
             return
-        export_result = self.controller.prepare_profile_export(self.data.profile, self.export_passphrase)
+        export_result = self.controller.prepare_profile_export(self.data.profile, "")
         self.pending_export_text = export_result.export_text
         self.pending_export_name = export_result.suggested_file_name
         self.pending_picker_action = "export"
@@ -745,7 +741,6 @@ class AnjaniKanjiDesktop:
             profiles=self.profiles,
             profile_id=self.profile_id,
             new_profile_name=self.new_profile_name,
-            export_passphrase=self.export_passphrase,
             data=self.data,
             on_toggle_sidebar=self.toggle_sidebar,
             on_set_view=self.set_view,
@@ -758,7 +753,6 @@ class AnjaniKanjiDesktop:
             on_daily_target_change=self.set_daily_target,
             on_scheduler_mode_change=self.set_scheduler_mode,
             on_desired_retention_change=self.set_desired_retention,
-            on_export_passphrase_change=self.set_export_passphrase,
             on_import_backup=self.pick_import_backup,
             on_import_backup_copy=self.pick_import_backup_copy,
             on_begin_export=self.begin_export,
@@ -1117,7 +1111,6 @@ class AnjaniKanjiDesktop:
             profiles=self.profiles,
             profile_id=self.profile_id,
             new_profile_name=self.new_profile_name,
-            export_passphrase=self.export_passphrase,
             data=self.data,
             on_toggle_sidebar=self.toggle_sidebar,
             on_set_view=self.set_view,
@@ -1130,7 +1123,6 @@ class AnjaniKanjiDesktop:
             on_daily_target_change=self.set_daily_target,
             on_scheduler_mode_change=self.set_scheduler_mode,
             on_desired_retention_change=self.set_desired_retention,
-            on_export_passphrase_change=self.set_export_passphrase,
             on_import_backup=self.pick_import_backup,
             on_import_backup_copy=self.pick_import_backup_copy,
             on_begin_export=self.begin_export,

@@ -13,11 +13,6 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Iterable, TypeVar, cast
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.exceptions import InvalidTag
-
 from .fsrs_scheduler import (
     DEFAULT_DESIRED_RETENTION,
     DEFAULT_SCHEDULER_MODE,
@@ -739,13 +734,12 @@ class AppStorage:
             "sessions": [asdict(session) for session in self.all_sessions(profile_id)],
             "review_logs": [dict(row) for row in self.conn.execute("SELECT * FROM review_logs WHERE profile_id = ?", (profile_id,)).fetchall()],
         }
-        if not passphrase:
-            return json.dumps({"encrypted": False, "data": payload}, ensure_ascii=False, indent=2)
-        text = json.dumps(payload, ensure_ascii=False, indent=2)
-        return json.dumps(_encrypt_text(text, passphrase), ensure_ascii=False, indent=2)
+        del passphrase
+        return json.dumps(payload, ensure_ascii=False, indent=2)
 
     def load_export_payload(self, export_text: str, passphrase: str = "") -> dict[str, Any]:
-        """Parse an exported profile payload, supporting legacy unencrypted backups."""
+        """Parse an exported profile payload."""
+        del passphrase
         try:
             root = json.loads(export_text)
         except json.JSONDecodeError as exc:
@@ -753,29 +747,7 @@ class AppStorage:
         if not isinstance(root, dict):
             raise ValueError("Backup payload must be a JSON object")
 
-        encrypted = bool(root.get("encrypted"))
-        if encrypted:
-            if not passphrase:
-                raise ValueError("Passphrase required for encrypted backup")
-            try:
-                decrypted_text = _decrypt_text(root, passphrase)
-                payload = json.loads(decrypted_text)
-            except (InvalidTag, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-                raise ValueError("Could not decrypt backup. Check the passphrase and file contents.") from exc
-        else:
-            data = root.get("data")
-            if isinstance(data, str):
-                try:
-                    payload = json.loads(data)
-                except json.JSONDecodeError as exc:
-                    raise ValueError("Legacy backup payload contains invalid embedded JSON") from exc
-            elif isinstance(data, dict):
-                payload = data
-            else:
-                raise ValueError("Unencrypted backup must contain an object or JSON string in 'data'")
-
-        if not isinstance(payload, dict):
-            raise ValueError("Decoded backup payload must be a JSON object")
+        payload = root
 
         required_keys = {"profile", "decks", "kanji", "cards", "sessions", "review_logs"}
         missing = sorted(required_keys.difference(payload.keys()))
@@ -1256,31 +1228,3 @@ def relative_time(ts: int | None) -> str:
 
 def day_key(ts: int) -> str:
     return datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d")
-
-
-def _encrypt_text(text: str, passphrase: str) -> dict[str, object]:
-    salt = os.urandom(16)
-    iv = os.urandom(12)
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=150_000)
-    key = kdf.derive(passphrase.encode("utf-8"))
-    encrypted = AESGCM(key).encrypt(iv, text.encode("utf-8"), None)
-    return {
-        "encrypted": True,
-        "algorithm": "AES-GCM",
-        "kdf": "PBKDF2-SHA256",
-        "iterations": 150_000,
-        "salt": base64.b64encode(salt).decode("ascii"),
-        "iv": base64.b64encode(iv).decode("ascii"),
-        "data": base64.b64encode(encrypted).decode("ascii"),
-    }
-
-
-def _decrypt_text(payload: dict[str, Any], passphrase: str) -> str:
-    salt = base64.b64decode(str(payload["salt"]))
-    iv = base64.b64decode(str(payload["iv"]))
-    encrypted = base64.b64decode(str(payload["data"]))
-    iterations = int(payload.get("iterations", 150_000))
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=iterations)
-    key = kdf.derive(passphrase.encode("utf-8"))
-    decrypted = AESGCM(key).decrypt(iv, encrypted, None)
-    return decrypted.decode("utf-8")
