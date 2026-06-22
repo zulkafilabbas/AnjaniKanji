@@ -1,3 +1,5 @@
+import random
+
 toki_n5 = [
     ("一", "one"),
     ("二", "two"),
@@ -174,12 +176,14 @@ genki_1 = [
     ("色", "color"),
 ]
 
-import random
 
 decks = {
     "toki": toki_n5,
     "genki": genki_1,
 }
+
+print("Two Decks: ", decks.keys())
+print(f"{len(decks['toki'])}, {len(decks['genki'])}")
 
 deck_choice = input("Choose list: toki or genki: ").strip().lower()
 side_choice = input("Print: kanji or meaning: ").strip().lower()
